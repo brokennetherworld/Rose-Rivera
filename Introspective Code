@@ -1,0 +1,38 @@
+#include <type_traits>
+#include <string>
+#include <typeinfo>
+
+using namespace std;
+ 
+template<typename T>
+typename enable_if<is_arithmetic<T>::value, void>::type
+process(const T& value) {
+	cout << "[INFO]Hello Process.\n";
+}
+template<typename T>
+typename enable_if<!is_arithmetic<T>::value, void>::type
+process(const T& value) {
+	cout << "[WARN] Hello Again: type=" << typeid(T).name()
+		<< ". nothing too drastic\n";
+}
+
+struct CustomType {};
+
+int main() {
+	int x = 5;
+	double y = 3.14;
+	string Z = "hello world";
+	CustomType c;
+
+	cout << ">>> Introspective Code...\n\n";
+
+
+	process(x);
+	process(y);
+	process(Z);
+	process(c);
+
+	cout << "\n>>> Hello RSA.\n";
+
+	return 0;
+}
