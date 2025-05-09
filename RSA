@@ -1,0 +1,36 @@
+#include <iostream> 
+#include <cmath> 
+using namespace std; 
+
+long long power(long long base, long long exponent, long long modulus) { 
+    long long res = 1; 
+    base = base % modulus; 
+    while (exponent > 0) { 
+        if (exponent % 2 == 1) res = (res * base) % modulus; 
+        base = (base * base) % modulus; 
+        exponent /= 2; 
+    } 
+    return res; 
+} 
+
+int gcd(int a, int b) { 
+    if (b == 0) return a; 
+    return gcd(b, a % b); 
+} 
+
+int main() {    
+
+    int p = 87; 
+    int q = 49; 
+    int n = p * q; 
+    int phi_n = (p - 1) * (q - 1); 
+    int e = 13; 
+    int d = 2913; 
+    int message = 87; 
+    long long ciphertext = power(message, e, n); 
+    long long decrypted_message = power(ciphertext, d, n); 
+    cout << "the recoded"; 
+    
+    return 0; 
+
+} 
