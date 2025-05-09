@@ -1,0 +1,143 @@
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <cmath>
+#include <cstdlib>
+#include <ctime>
+
+using namespace std;
+
+using Vector = vector<double>;
+using Matrix = vector<Vector>;
+
+Matrix read_csv(const string& filename) {
+    ifstream file(filename);
+    string line;
+    Matrix mat;
+
+    while (getline(file, line)) {
+        stringstream ss(line);
+        string val;
+        Vector row;
+        while (getline(ss, val, ',')) {
+            row.push_back(stod(val));
+        }
+        mat.push_back(row);
+    }
+    return mat;
+}
+
+void print_matrix(const Matrix& mat) {
+    for(const auto& row : mat) {
+        for(double val : row)
+            cout << val << "\t";
+        cout << "\n";
+    }
+}
+
+Vector mean_vector(const Matrix& mat) {
+    int cols = mat[0].size();
+    Vector mean(cols, 0.0);
+    for (const auto& row : mat) {
+        for (int j = 0; j < cols; ++j)
+            mean[j] += row[j];
+    }
+    for (double& m : mean)
+        m /= mat.size();
+    return mean;
+}
+
+Matrix center_matrix(const Matrix& mat, const Vector& mean) {
+    Matrix centered = mat;
+    for(auto& row : centered) {
+        for(int j = 0; j < row.size(); ++j)
+            row[j] -= mean[j];
+    }
+    return centered;
+}
+
+Matrix covariance(const Matrix& mat) {
+    int rows = mat.size();
+    int cols = mat[0].size();
+    Matrix cov(cols, Vector(cols, 0.0));
+
+    for (int i = 0; i < cols; ++i) {
+        for(int j = i; j < cols; ++j) {
+            double sum = 0.0;
+            for(int k = 0; k < rows; ++k)
+                sum += mat[k][i] * mat[k][j];
+            cov[i][j] = cov[j][i] = sum / (rows - 1);
+        }
+    }
+    return cov;
+}
+
+Vector power_iteration(const Matrix& A, int max_iter = 1000, double tol = 1e-6) {
+    int n = A.size();
+    Vector b(n);
+    for (int i = 0; i < n; ++i)
+        b[i] = (rand() % 100) / 100.0;
+
+    for (int iter = 0; iter < max_iter; ++iter) {
+        Vector Ab(n, 0.0);
+        for (int i = 0; i < n; ++i)
+            for (int j = 0; j < n; ++j)
+                Ab[i] += A[i][j] * b[j];
+
+        double norm = 0.0;
+        for (double x : Ab)
+            norm += x * x;
+        norm = sqrt(norm);
+
+        for (int i = 0; i < n; ++i)
+            Ab[i] /= norm;
+
+        double diff = 0.0;
+        for (int i = 0; i < n; ++i)
+            diff += abs(b[i] - Ab[i]);
+
+        if (diff < tol) break;
+
+        b = Ab;
+    }
+    return b;
+}
+
+Matrix project_pca(const Matrix& centered, const Vector& component) {
+    Matrix projected;
+    for (const auto& row : centered) {
+        double dot = 0.0;
+        for (int i = 0; i < row.size(); ++i)
+            dot += row[i] * component[i];
+        projected.push_back({dot});
+    }
+    return projected;
+}
+
+int main() {
+    srand(static_cast<unsigned>(time(0)));
+
+    Matrix you = read_csv("authentic.csv");  // Make sure file exists with proper CSV data
+
+    Matrix data = you;
+    for (int i = 0; i < 4; ++i) {
+        Vector row = you[0];
+        for (auto& val : row)
+            val += ((rand() % 20) - 10) / 100.0;
+        data.push_back(row);
+    }
+
+    Vector mean = mean_vector(data);
+    Matrix centered = center_matrix(data, mean);
+    Matrix cov = covariance(centered);
+    Vector pc1 = power_iteration(cov);
+    Matrix projected = project_pca(centered, pc1);
+
+    cout << "\nPCA (1st Principal Component):\n";
+    for (size_t i = 0; i < projected.size(); ++i) {
+        cout << "Individual " << i + 1 << ": " << projected[i][0] << endl;
+    }
+
+    return 0;
+}
